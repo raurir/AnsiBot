@@ -1,0 +1,31 @@
+{
+  "name": "bot",
+  "version": "0.0.0",
+  "description": "ansi art twitter bot",
+  "main": "ansibot.js",
+  "dependencies": {
+    "twitter": "~1.2.5",
+    "underscore": "~1.8.3",
+    "canvas": "~1.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "./launch.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raurir/AnsiBot.git"
+  },
+  "keywords": [
+    "ansi",
+    "twitter",
+    "bot",
+    "canvas",
+    "convert"
+  ],
+  "author": "raurir",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/raurir/AnsiBot/issues"
+  }
+}
