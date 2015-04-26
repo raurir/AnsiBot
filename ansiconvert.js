@@ -1,14 +1,14 @@
 var _ = require("underscore");
-var Canvas = require("Canvas");
+var Canvas = require("canvas");
 var Image = Canvas.Image;
 var Promise = require('promise');
 var con = console;
 
 module.exports = (function() {
 
-	var canvas, 
+	var canvas,
 		pixelSize = 2,
-		blockWidth = 8 * pixelSize, 
+		blockWidth = 8 * pixelSize,
 		blockHeight = 16 * pixelSize;
 
 	function genBlock() {
@@ -74,7 +74,7 @@ module.exports = (function() {
 	function render(image){
 		return new Promise(function(fulfill, reject) {
 			try {
-				var pixelatedWidth = Math.ceil(image.width / blockWidth), 
+				var pixelatedWidth = Math.ceil(image.width / blockWidth),
 					pixelatedHeight = Math.ceil(image.height / blockHeight);
 
 				var miniCanvas = new Canvas(pixelatedWidth, pixelatedHeight);
@@ -111,7 +111,7 @@ module.exports = (function() {
 				// ctx.drawImage(block, blockWidth * 2, 0);
 
 
-				
+
 				for (var i = 0, il = pixels.length; i < il; i += 4) {
 					var pixelIndex = i / 4,
 						r = pixels[i],
