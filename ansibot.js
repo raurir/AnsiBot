@@ -1,7 +1,7 @@
 var Twitter = require("twitter");
 var _ = require("underscore");
 var ansiconvert = require("./ansiconvert");
-var Canvas = require("Canvas");
+var Canvas = require("canvas");
 var Image = Canvas.Image;
 var fs = require("fs");
 var http = require("http");
@@ -16,7 +16,7 @@ function initBot() {
 
 	var ansiBotID = "3171474097",
 		outputDir = "/export/",
-		hits = 0, 
+		hits = 0,
 		scale = 1,  // not implemented
 		client,
 		sourceTweet = null; // TODO this... yes, this... ?
@@ -70,7 +70,7 @@ function initBot() {
 
 				}
 			});
-		 
+
 			stream.on("error", function(error) {
 				// throw error;
 				con.log(error);
@@ -232,7 +232,7 @@ function initBot() {
 				case "2x" : scale = 2; break;
 				case "3x" : scale = 3; break;
 				case "4x" : scale = 4; break;
-				default : 
+				default :
 					con.log("could be the file name:", param);
 					if (/(http|https):\/\//.test(param)) url = param;
 			}
