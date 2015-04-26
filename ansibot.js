@@ -6,52 +6,35 @@ var Image = Canvas.Image;
 var fs = require("fs");
 var http = require("http");
 var https = require("https");
+var Promise = require('promise');
+var request = require("request");
 
 var con = console;
 
 function initBot() {
+	con.log("initialising bot");
 
 	var ansiBotID = "3171474097",
 		outputDir = "/export/",
 		hits = 0, 
-		scale = 1, 
-		url = "", 
-		protocol = http,
-		filename = "";
+		scale = 1,  // not implemented
+		client,
+		sourceTweet = null; // TODO this... yes, this... ?
 
-	var client = new Twitter({
-		consumer_key: process.env.TWITTER_CONSUMER_KEY,
-		consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-		access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
-		access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-	});
-
-	function replyToMention(source) {
-		hits ++;
-		if (hits > 2) {
-			throw new Error("more than 5 hits!");
-			return;
-		}
-
-		var reply = {
-			status: "@" + source.user.screen_name + " I am Graphics Bot " + Math.round(Math.random() * 1e10).toString(16),
-			in_reply_to_status_id: source.id_str,
-		};
-
-		con.log("replyToMention", reply);
-
-
-		client.post("statuses/update", reply,  function(error, tweet, response){
-			if(error) throw error;
-			con.log("replyToMention tweet", tweet.text);
-			con.log("=====================================");
-			// con.log("response");
-			// con.log(response);  // Raw response object. 
-			// con.log("=====================================");
-			
+	function initClient() {
+		if (client) return;
+		con.log("initialising client");
+		client = new Twitter({
+			consumer_key: process.env.TWITTER_CONSUMER_KEY,
+			consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+			access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
+			access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
 		});
 	}
+
 	function initStream() {
+		initClient();
+		con.log("initialising twitter stream");
 
 		client.stream("user", {track: "ansibot"}, function(stream) {
 			stream.on("data", function(tweet) {
@@ -71,7 +54,7 @@ function initBot() {
 								var botMentioned = _.findWhere(tweet.entities.user_mentions, {id_str: ansiBotID});
 								if (botMentioned) {
 									con.log("stream(user) - ok - botMentioned", botMentioned);
-									replyToMention(tweet);
+									parseTweet(tweet);
 								} else {
 									con.log("stream(user) - ok not mentioned", botMentioned);
 								}
@@ -93,78 +76,156 @@ function initBot() {
 				con.log(error);
 			});
 		});
+		con.log("Bot running...");
 	}
 
 
 
 	function postMedia(image) {
+		return new Promise(function(fulfill, reject) {
 
-		hits ++;
-		if (hits > 2) {
-			throw new Error("more than 5 hits!");
-			return;
-		}
+			con.log("postMedia", image);
+			hits ++;
+			if (hits > 2) {
+				con.log("too many hits!");
+				reject(new Error("more than 5 hits!"));
+			}
 
-		// Make post request on media endpoint. Pass file data as media parameter
-		client.post("media/upload", {media: image}, function(error, media, response){
+			con.log("trying client.post!");
+			try {
 
-			if (!error) {
-
-				// If successful, a media object will be returned.
-				con.log(media);
-
-				// Lets tweet it
-				var status = {
-					status: "Here is an image I made earlier...",
-					media_ids: media.media_id_string // Pass the media id string
-				}
-
-				client.post("statuses/update", status, function(error, tweet, response){
-					if (!error) {
-						con.log(tweet);
+				// Make post request on media endpoint. Pass file data as media parameter
+				client.post("media/upload", {media: image}, function(error, media, response){
+					if (error) {
+						con.log("postMedia reject 01", error);
+						reject(error);
+					} else {
+						con.log("postMedia fulfill!");
+						fulfill(media);
 					}
 				});
 
+			} catch (e) {
+				con.log("postMedia reject 03", e);
+				reject(e);
 			}
+
 		});
 	}
 
+	function postMediaTweet(media) {
+		return new Promise(function(fulfill, reject) {
+			// If successful, a media object will be returned.
+			con.log("postMediaTweet media success", media);
 
-	function loadFileFromURL(success) {
-		protocol.get(url, function(res) {
-			var buffers = [];
-			var length = 0;
-			res.on("data", function(chunk) {
-				// con.log("data", chunk.length);
-				// store each block of data
-				length += chunk.length;
-				buffers.push(chunk);
-			});
-			res.on("end", function() {
-				var loaded = Buffer.concat(buffers);
-				success(loaded);
-			});
-		});
+			// Lets tweet it
+			var status = {
+				status: "@" + sourceTweet.user.screen_name + " your ansi", // Here is an image I made earlier...",
+				media_ids: media.media_id_string,
+				in_reply_to_status_id: sourceTweet.in_reply_to_status_id
+			}
+
+			try {
+
+				client.post("statuses/update", status, function(error, tweet, response){
+					if (error) {
+						con.log("postMediaTweet reject 02", error);
+						reject(error);
+					} else {
+						con.log("postMediaTweet fulfill");
+						fulfill(tweet);
+					}
+				});
+
+			} catch (e) {
+				con.log("postMediaTweet reject 01", e);
+				reject(e);
+			}
+
+		})
 	}
 
-	function imageLoaded(data) {
-		var img = new Image();
-		img.src = data;
-		ansiconvert.convert(img, saveFile);
+	function loadImageURL(url) {
+		return new Promise(function(fulfill, reject) {
+			con.log("Promise loadImageURL", url);
+			var protocol = http;
+			if (/https:\/\//.test(url)) { protocol = https; }
+			protocol.get(url, function(res) {
+				var buffers = [], length = 0;
+				res.on("data", function(chunk) {
+					length += chunk.length;
+					// con.log("loadImageURL data", length);
+					buffers.push(chunk);
+				});
+				res.on("end", function() {
+					var loaded = Buffer.concat(buffers);
+					con.log("loadImageURL fullfill");
+					fulfill(loaded);
+				});
+				res.on("error", function(e) {
+					con.log("loadImageURL reject", e);
+				  reject(e);
+				});
+			});
+		});
 	}
 
 	function saveFile(content) {
-		fs.writeFile(__dirname + outputDir + filename, content, function(err) {
-			if(err) {
-				con.log(err);
+		con.log("saveFile", content.length);
+		return new Promise(function(fulfill, reject) {
+			var filename = "canvas_" + Math.round(Math.random() * 1e10).toString(16);
+			var location = _dirname + outputDir + filename;
+			con.log("Promise saveFile content", content.length, "location", location);
+			fs.writeFile(location, content
+				, 'binary'
+				, function(err) {
+				if (err) {
+					con.log("saveFile reject!!!", err);
+					reject(err);
+				} else {
+					con.log("saveFile fulfill!!!", content.length);
+					fulfill(content);
+				}
+			});
+		});
+	}
+
+	function checkURL(url){
+	  return new Promise(function (fulfill, reject){
+	    request({
+	      method: "HEAD",
+	      url: url,
+	      followAllRedirects: true
+		  },
+		  function (error, response, body) {
+		  	if (error) {
+		  		con.log("checkURL reject", response);
+		  		reject(response);
+		  	} else {
+		  		fulfill(response.request.uri.href);
+		  	}
+		  });
+	  });
+	}
+
+	function makeImage(data) {
+		return new Promise(function(fulfill, reject) {
+			var img = new Image();
+			img.src = data;
+			if (img) {
+				con.log("makeImage fulfill", img);
+				fulfill(img);
 			} else {
-				con.log("saveFile complete");	
+				con.log("makeImage reject");
+				reject();
 			}
 		});
 	}
 
 	function parseTweet(tweet) {
-		_.each(tweet.split(" "), function(param,i) {
+		var text = tweet.text;
+		var url = null;
+		_.each(text.split(" "), function(param,i) {
 			switch(param) {
 				case "@ansibot" : break;
 				case "1x" : scale = 1; break;
@@ -172,65 +233,82 @@ function initBot() {
 				case "3x" : scale = 3; break;
 				case "4x" : scale = 4; break;
 				default : 
-					if (/(http|https):\/\//.test(param)) {
-						url = param;
-						if (/https:\/\//.test(param)) { protocol = https; }
-					}
+					con.log("could be the file name:", param);
+					if (/(http|https):\/\//.test(param)) url = param;
 			}
 		})
-		filename = "canvas_" + _.last(url.split("/"));
-		con.log("scale", scale, "url", url, "filename", filename);
-		loadFileFromURL(imageLoaded);
+
+		if (url) {
+
+			sourceTweet = tweet;
+
+			var tweeter = checkURL(url)
+				.then(loadImageURL)
+
+				// .then(saveFile)
+
+				.then(makeImage)
+				.then(ansiconvert.render)
+				.then(ansiconvert.getBuffer)
+
+				//.then(saveFile).then(makeImage)
+
+				.then(postMedia).then(postMediaTweet);
+
+		} else {
+			con.log("parseTweet no URL found?", text);
+		}
 	}
 
+	// parseTweet({text: "@ansibot https://40.media.tumblr.com/0c83e15287453bbc777fb29bcad30822/tumblr_nn9bn13FAt1ro1dyeo1_540.png 1x"});
+	// parseTweet({text: "@ansibot http://i.imgur.com/GB89gsO.jpg 1x"});
+	// parseTweet({text: "@ansibot http://i.imgur.com/A3JWAcJ.jpg 1x"});
+	// parseTweet({text: "@ansibot http://i.imgur.com/NVjJHSNh.jpg 1x"});
+	// parseTweet({text: "@ansibot http://p1.pichost.me/640/48/1712789.jpg 1x"});
+	// parseTweet({text: "@ansibot http://dreamatico.com/data_images/graffiti/graffiti-1.jpg 1x"});
+	// parseTweet({text: "@ansibot http://upload.wikimedia.org/wikipedia/commons/4/46/WP_SOPA_asset_Radial_Gradient.jpg 1x"});
+	// parseTweet({text: "@ansibot http://th06.deviantart.net/fs71/PRE/f/2012/278/2/a/rainbow_gradient_by_guildmasterinfinite-d5gv3im.png 1x"});
+	// parseTweet({text: "@ansibot http://www.milesjcarter.co.uk/blog/wp-content/uploads/2010/11/gradient21.jpg 1x"});
+	// parseTweet({text: "@ansibot gradients.png 1x"});
+	// parseTweet({text: "@ansibot savoury.jpg 1x"});
+	// parseTweet({text: "@ansibot http://t.co/GiYc8PUmLF 1x"});
 
-
-	var tweet = "@ansibot https://40.media.tumblr.com/0c83e15287453bbc777fb29bcad30822/tumblr_nn9bn13FAt1ro1dyeo1_540.png 1x";
-	var tweet = "@ansibot http://i.imgur.com/GB89gsO.jpg 1x";
-	var tweet = "@ansibot http://i.imgur.com/A3JWAcJ.jpg 1x";
-
-
-
-	parseTweet(tweet);
-
+	initStream();
+	initClient();
 
 }
 
 initBot();
 
+/*
+// other node methods
 
+function readFile(filename, enc){
+  return new Promise(function (fulfill, reject){
+    fs.readFile(filename, enc, function (err, res){
+    	con.log("readFile done...");
+      if (err) reject(err);
+      else fulfill(res);
+    });
+  });
+}
 
+// other twitter options...
 
+var params = {screen_name: "nodejs"};
+client.get("statuses/user_timeline", params, function(error, tweets, response){
+	if (!error) {
+		con.log("num tweets", tweets.length);
+	}
+});
 
-// var image = ansiconvert.getImage(); postMedia(image);
+client.stream("statuses/filter", {track: "javascript"}, function(stream) {
+  stream.on("data", function(tweet) {
+    con.log("tweet", tweet.text);
+  });
+  stream.on("error", function(error) {
+    throw error;
+  });
+});
 
-// ansiconvert.getCanvas(function(res) { postMedia(res);});
-
-// initStream();
-
-
-
-
-
-
-
-
-
-
-
-// var params = {screen_name: "nodejs"};
-// client.get("statuses/user_timeline", params, function(error, tweets, response){
-// 	if (!error) {
-// 		con.log("num tweets", tweets.length);
-// 	}
-// });
-
-// client.stream("statuses/filter", {track: "javascript"}, function(stream) {
-//   stream.on("data", function(tweet) {
-//     con.log("tweet", tweet.text);
-//   });
-//   stream.on("error", function(error) {
-//     throw error;
-//   });
-// });
-
+*/
