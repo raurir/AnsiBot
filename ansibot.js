@@ -30,6 +30,7 @@ function initBot() {
 			access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
 			access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
 		});
+		// con.log("client", client)
 	}
 
 	function initStream() {
@@ -76,8 +77,77 @@ function initBot() {
 				con.log(error);
 			});
 		});
+
 		con.log("Bot running...");
 	}
+
+
+
+	function initSocial() {
+
+
+
+		function getFollowers() {
+			client.get('followers/ids', function(error, reply) {
+				if (error) {
+					con.log("get followers error:", error);
+				} else {
+					var followers = reply.ids, randFollower = randIndex(followers);
+					con.log('get followers good', followers)
+					// getFriends(randFollower);
+				}
+			})
+		}
+
+		function getFollowing() {
+			client.get('???', function(error, reply) {
+				if (error) {
+					con.log("getFollowing error:", error);
+				} else {
+					// var followers = reply.ids, randFollower = randIndex(followers);
+					con.log('getFollowing reply', reply)
+					// getFriends(randFollower);
+				}
+			})
+		}
+
+		function randIndex(arr) {
+			return new Promise(function(fulfill, reject) {
+				var item = arr[Math.round(Math.random() * arr.length)];
+				fulfill(item);
+			});
+		}
+
+
+		function getFriends(user_id) {
+			return new Promise(function(fulfill, reject) {
+				var param = user_id ? { user_id: user_id } : {};
+				client.get('friends/ids', param, function(error, reply) {
+					if (error) {
+						con.log("get friend ids", error);
+						reject(error);
+					} else {
+						var friends = reply.ids;
+						con.log("getFriends of", user_id, friends.length, friends.join(" / "));
+						fulfill(friends);
+						// self.twit.post('friendships/create', { id: target }, callback);
+					}
+				})
+			})
+		}
+
+		// var what = getFriends().then(randIndex);
+
+
+
+	}
+
+
+
+
+
+
+
 
 
 
@@ -164,7 +234,7 @@ function initBot() {
 				});
 				res.on("error", function(e) {
 					con.log("loadImageURL reject", e);
-				  reject(e);
+					reject(e);
 				});
 			});
 		});
@@ -191,21 +261,21 @@ function initBot() {
 	}
 
 	function checkURL(url){
-	  return new Promise(function (fulfill, reject){
-	    request({
-	      method: "HEAD",
-	      url: url,
-	      followAllRedirects: true
-		  },
-		  function (error, response, body) {
-		  	if (error) {
-		  		con.log("checkURL reject", response);
-		  		reject(response);
-		  	} else {
-		  		fulfill(response.request.uri.href);
-		  	}
-		  });
-	  });
+		return new Promise(function (fulfill, reject){
+			request({
+				method: "HEAD",
+				url: url,
+				followAllRedirects: true
+			},
+			function (error, response, body) {
+				if (error) {
+					con.log("checkURL reject", response);
+					reject(response);
+				} else {
+					fulfill(response.request.uri.href);
+				}
+			});
+		});
 	}
 
 	function makeImage(data) {
@@ -273,8 +343,9 @@ function initBot() {
 	// parseTweet({text: "@ansibot savoury.jpg 1x"});
 	// parseTweet({text: "@ansibot http://t.co/GiYc8PUmLF 1x"});
 
-	initStream();
+	// initStream();
 	initClient();
+	initSocial();
 
 }
 
@@ -284,13 +355,13 @@ initBot();
 // other node methods
 
 function readFile(filename, enc){
-  return new Promise(function (fulfill, reject){
-    fs.readFile(filename, enc, function (err, res){
-    	con.log("readFile done...");
-      if (err) reject(err);
-      else fulfill(res);
-    });
-  });
+	return new Promise(function (fulfill, reject){
+		fs.readFile(filename, enc, function (err, res){
+			con.log("readFile done...");
+			if (err) reject(err);
+			else fulfill(res);
+		});
+	});
 }
 
 // other twitter options...
@@ -303,12 +374,12 @@ client.get("statuses/user_timeline", params, function(error, tweets, response){
 });
 
 client.stream("statuses/filter", {track: "javascript"}, function(stream) {
-  stream.on("data", function(tweet) {
-    con.log("tweet", tweet.text);
-  });
-  stream.on("error", function(error) {
-    throw error;
-  });
+	stream.on("data", function(tweet) {
+		con.log("tweet", tweet.text);
+	});
+	stream.on("error", function(error) {
+		throw error;
+	});
 });
 
 */
