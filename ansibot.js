@@ -116,8 +116,13 @@ function initBot() {
 						reject(error);
 					} else {
 						var friends = reply.ids;
-						con.log("getFriends of", user_id, friends.length);//, friends.join(" / "));
-						fulfill(friends);
+						if (friends.length) {
+							con.log("getFriends of", user_id, friends.length);//, friends.join(" / "));
+							fulfill(friends);
+						} else {
+							con.log("rejected no friends...")
+							reject();
+						}
 					}
 				})
 			})
@@ -135,10 +140,7 @@ function initBot() {
 							// con.log("=====================================");
 							// con.log("followFriend fulfill response", response);
 							// con.log("=====================================");
-							con.log("followFriend fulfill name:", response.name);
-							con.log("followFriend fulfill location:", response.location);
-							con.log("followFriend fulfill description:", response.description);
-							con.log("followFriend fulfill url:", response.url);
+							con.log("followFriend fulfill name:", response.name, "location:", response.location, "description:", response.description, "url:", response.url);
 							fulfill(response);
 						}
 					});
@@ -161,7 +163,7 @@ function initBot() {
 			setTimeout(doIt, delay);
 		}
 
-		doIt();
+		doItAgain();
 
 		function checkRateLimit() {
 			client.get('application/rate_limit_status', {}, function(error, response) {
@@ -173,6 +175,8 @@ function initBot() {
 			})
 		}
 
+
+		// getFriends(253345739).then(randIndex);
 
 	}
 
