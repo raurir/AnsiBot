@@ -40,11 +40,11 @@ function initBot() {
 			stream.on("data", function(tweet) {
 				if (tweet.user) {
 					if (tweet.user.id_str === ansiBotID) {
-						con.log("Got an echo of myself!", tweet.text)
+						// con.log("Got an echo of myself!", tweet.text)
 					} else {
 
 						if (tweet.text) {
-							con.log("stream(user) - ok - tweet.text", tweet.text);
+							// con.log("stream(user) - ok - tweet.text", tweet.text);
 
 							// con.log("=====================================");
 							// con.log("stream(user) - ok", tweet);
@@ -56,14 +56,14 @@ function initBot() {
 									con.log("stream(user) - ok - botMentioned", botMentioned);
 									parseTweet(tweet);
 								} else {
-									con.log("stream(user) - ok not mentioned", botMentioned);
+									// con.log("stream(user) - ok not mentioned", botMentioned);
 								}
 							}
 
 						} else if (tweet.friends) {
-							con.log("stream(user) - initial tweet - friends:", tweet.friends.length);
+							// con.log("stream(user) - initial tweet - friends:", tweet.friends.length);
 						} else {
-							con.log("stream(user) - unknown tweet", tweet);
+							// con.log("stream(user) - unknown tweet", tweet);
 						}
 
 					}
@@ -122,7 +122,7 @@ function initBot() {
 			var status = {
 				status: "@" + sourceTweet.user.screen_name + " your ansi", // Here is an image I made earlier...",
 				media_ids: media.media_id_string,
-				in_reply_to_status_id: sourceTweet.in_reply_to_status_id
+				in_reply_to_status_id: sourceTweet.id_str
 			}
 
 			try {
