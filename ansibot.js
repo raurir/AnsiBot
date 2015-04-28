@@ -153,6 +153,8 @@ function initBot() {
 
 
 		function doIt() {
+			now = new Date()
+			con.log("time", now.getHours() + ":" + now.getMinutes())
 			getFriends().then(randIndex).then(getFriends).then(randIndex).then(followFriend).then(doItAgain);
 		}
 
