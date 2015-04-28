@@ -99,18 +99,6 @@ function initBot() {
 			})
 		}
 
-		function getFollowing() {
-			client.get('???', function(error, reply) {
-				if (error) {
-					con.log("getFollowing error:", error);
-				} else {
-					// var followers = reply.ids, randFollower = randIndex(followers);
-					con.log('getFollowing reply', reply)
-					// getFriends(randFollower);
-				}
-			})
-		}
-
 		function randIndex(arr) {
 			return new Promise(function(fulfill, reject) {
 				var item = arr[Math.round(Math.random() * arr.length)];
@@ -118,8 +106,8 @@ function initBot() {
 			});
 		}
 
-
 		function getFriends(user_id) {
+			// con.log("getFriends", user_id);
 			return new Promise(function(fulfill, reject) {
 				var param = user_id ? { user_id: user_id } : {};
 				client.get('friends/ids', param, function(error, reply) {
@@ -128,16 +116,62 @@ function initBot() {
 						reject(error);
 					} else {
 						var friends = reply.ids;
-						con.log("getFriends of", user_id, friends.length, friends.join(" / "));
+						con.log("getFriends of", user_id, friends.length);//, friends.join(" / "));
 						fulfill(friends);
-						// self.twit.post('friendships/create', { id: target }, callback);
 					}
 				})
 			})
 		}
 
-		// var what = getFriends().then(randIndex);
+		function followFriend(user_id) {
+			con.log("followFriend", user_id);
+			return new Promise(function(fulfill, reject) {
+				try {
+					client.post('friendships/create', {id: user_id}, function(error, response) {
+						if (error) {
+							con.log("get friend ids", error);
+							reject(error);
+						} else {
+							// con.log("=====================================");
+							// con.log("followFriend fulfill response", response);
+							// con.log("=====================================");
+							con.log("followFriend fulfill name:", response.name);
+							con.log("followFriend fulfill location:", response.location);
+							con.log("followFriend fulfill description:", response.description);
+							con.log("followFriend fulfill url:", response.url);
+							fulfill(response);
+						}
+					});
+				} catch(e) {
+					con.log("followFriend error", e);
+					reject(e);
+				}
+			});
+		}
 
+
+		function doIt() {
+			getFriends().then(randIndex).then(getFriends).then(randIndex).then(followFriend).then(doItAgain);
+		}
+
+		function doItAgain() {
+			var delayMins = Math.round((3 + Math.random() * 3) * 100) / 100;
+			var delay = delayMins * 60 * 1000;
+			con.log("doItAgain in minutes", delayMins, delay);
+			setTimeout(doIt, delay);
+		}
+
+		doIt();
+
+		function checkRateLimit() {
+			client.get('application/rate_limit_status', {}, function(error, response) {
+				if (error) {
+					con.log("rate limit error", error);
+				} else {
+					con.log("rate limit response", response)
+				}
+			})
+		}
 
 
 	}
