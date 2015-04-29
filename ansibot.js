@@ -101,8 +101,13 @@ function initBot() {
 
 		function randIndex(arr) {
 			return new Promise(function(fulfill, reject) {
-				var item = arr[Math.round(Math.random() * arr.length)];
-				fulfill(item);
+				try {
+					var item = arr[Math.round(Math.random() * arr.length)];
+					fulfill(item);
+				}catch (e) {
+					con.log("randIndex error", e);
+					reject(e);
+				}
 			});
 		}
 
@@ -121,7 +126,7 @@ function initBot() {
 							fulfill(friends);
 						} else {
 							con.log("rejected no friends...")
-							reject();
+							reject([]);
 						}
 					}
 				})
@@ -129,24 +134,28 @@ function initBot() {
 		}
 
 		function followFriend(user_id) {
-			con.log("followFriend", user_id);
 			return new Promise(function(fulfill, reject) {
-				try {
-					client.post('friendships/create', {id: user_id}, function(error, response) {
-						if (error) {
-							con.log("get friend ids", error);
-							reject(error);
-						} else {
-							// con.log("=====================================");
-							// con.log("followFriend fulfill response", response);
-							// con.log("=====================================");
-							con.log("followFriend fulfill name:", response.name, "location:", response.location, "description:", response.description, "url:", response.url);
-							fulfill(response);
-						}
-					});
-				} catch(e) {
-					con.log("followFriend error", e);
-					reject(e);
+				if (user_id) {
+					try {
+						client.post('friendships/create', {id: user_id}, function(error, response) {
+							if (error) {
+								con.log("followFriend error 01", error);
+								reject(error);
+							} else {
+								// con.log("=====================================");
+								// con.log("followFriend fulfill response", response);
+								// con.log("=====================================");
+								con.log("followFriend fulfill name:", response.name, "location:", response.location, "description:", response.description, "url:", response.url);
+								fulfill(response);
+							}
+						});
+					} catch(e) {
+						con.log("followFriend error 02", e);
+						reject(e);
+					}
+				} else {
+					con.log("followFriend no friend to follow!");
+					fulfill(null);
 				}
 			});
 		}
@@ -155,7 +164,8 @@ function initBot() {
 		function doIt() {
 			now = new Date()
 			con.log("time", now.getHours() + ":" + now.getMinutes())
-			getFriends().then(randIndex).then(getFriends).then(randIndex).then(followFriend).then(doItAgain);
+			getFriends().then(randIndex).then(getFriends)
+				.then(randIndex).then(followFriend).then(doItAgain);
 		}
 
 		function doItAgain() {
@@ -165,7 +175,8 @@ function initBot() {
 			setTimeout(doIt, delay);
 		}
 
-		doItAgain();
+		// doItAgain();
+		doIt();
 
 		function checkRateLimit() {
 			client.get('application/rate_limit_status', {}, function(error, response) {
