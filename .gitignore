@@ -1,3 +1,5 @@
 node_modules
 launch.sh
 export/*
+
+.DS_Store
