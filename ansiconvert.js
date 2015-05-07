@@ -39,8 +39,8 @@ module.exports = (function() {
 		return block;
 	}
 
-	var min = 0, low = 87, mid = 168, high = 255;
 
+/*
 	var colours = [
 		[min,min,min], // black
 		[min,min,mid], // blue
@@ -59,16 +59,30 @@ module.exports = (function() {
 		[high,high,low], // yellow
 		[high,high,high], // white
 	];
+*/
+
+	var min = 0, low = 87, mid = 168, high = 255;
+	// var min = 0, low = Math.pow(87, 2), mid = Math.pow(168, 2), high = Math.pow(255, 2);
 
 	function getClosest(channel) {
 		// returns colours step below, above and shade ratio between the two (0 - 1)
+		// channel *= channel;
+		var lower, upper, fraction;
 		if (channel < low) {
-			return [0, low, channel / low];
+			lower = 0;
+			upper = low;
+			fraction = channel / low;
 		} else if (channel < mid) {
-			return [low, mid, (channel - low) / (mid - low)];
+			lower = low;
+			upper = mid;
+			fraction = (channel - low) / (mid - low);
 		} else {
-			return [mid, high, (channel - mid) / (high - mid)];
+			lower = mid;
+			upper = high;
+			fraction = (channel - mid) / (high - mid);
 		}
+		// return [Math.sqrt(lower), Math.sqrt(upper), Math.sqrt(fraction)];
+		return [lower, upper, fraction];
 	}
 
 	function render(image){
