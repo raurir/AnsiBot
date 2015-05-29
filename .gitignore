@@ -1,5 +1,4 @@
 node_modules
-launch.sh
+launchAnsibot.sh
 export/*
-
 .DS_Store
