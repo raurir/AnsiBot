@@ -27,3 +27,5 @@
 ░░░░░░▓▓▓▓▓▓░░░░░░▓▓▓▓▓▓░░░░░░▓▓▓▓▓▓░░░░░░▓▓▓▓▓▓░░░░░░▓▓▓▓▓▓░░░░░░▓▓▓▓▓▓░░░░░░
 
 ```
+
+Uses [TwitterSocialBot](https://github.com/raurir/TwitterSocialBot)
