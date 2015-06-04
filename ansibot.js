@@ -299,7 +299,7 @@ function initBot() {
 
 	initStream();
 	initClient();
-	initSocial();
+	// initSocial();
 
 }
 
