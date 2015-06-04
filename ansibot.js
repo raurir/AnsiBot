@@ -8,7 +8,7 @@ var Promise = require('promise');
 var request = require("request");
 
 var ansiconvert = require("./ansiconvert");
-var socialbot = require("./socialbot");
+var socialbot = require("./TwitterSocialBot/socialbot");
 
 var con = console;
 
