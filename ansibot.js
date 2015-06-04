@@ -1,6 +1,4 @@
-var Twitter = require("twitter");
 var _ = require("underscore");
-var ansiconvert = require("./ansiconvert");
 var Canvas = require("canvas");
 var Image = Canvas.Image;
 var fs = require("fs");
@@ -9,6 +7,9 @@ var https = require("https");
 var Promise = require('promise');
 var request = require("request");
 
+var ansiconvert = require("./ansiconvert");
+var socialbot = require("./socialbot");
+
 var con = console;
 
 function initBot() {
@@ -16,15 +17,13 @@ function initBot() {
 
 	var ansiBotID = "3171474097",
 		outputDir = "/export/",
-		hits = 0,
 		scale = 1,  // not implemented
-		client,
-		sourceTweet = null; // TODO this... yes, this... ?
+		client;
 
 	function initClient() {
 		if (client) return;
 		con.log("initialising client");
-		client = new Twitter({
+		client = socialbot.initClient({
 			consumer_key: process.env.TWITTER_CONSUMER_KEY,
 			consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
 			access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
@@ -85,19 +84,22 @@ function initBot() {
 
 	function initSocial() {
 
-
-
-		function getFollowers() {
-			client.get('followers/ids', function(error, reply) {
-				if (error) {
-					con.log("get followers error:", error);
-				} else {
-					var followers = reply.ids, randFollower = randIndex(followers);
-					con.log('get followers good', followers)
-					// getFriends(randFollower);
-				}
-			})
+		function doIt() {
+			now = new Date()
+			con.log("time", now.getHours() + ":" + now.getMinutes())
+			socialbot.getFriends().then(randIndex).then(socialbot.getFriends)
+				.then(randIndex).then(socialbot.followFriend).then(doItAgain).catch(function(err) {
+					con.log("doIt error", err);
+				});
 		}
+
+		function doItAgain() {
+			var delayMins = Math.round((3 + Math.random() * 3) * 100) / 100;
+			var delay = delayMins * 60 * 1000;
+			con.log("doItAgain in minutes", delayMins, delay);
+			setTimeout(doIt, delay);
+		}
+
 
 		function randIndex(arr) {
 			return new Promise(function(fulfill, reject) {
@@ -109,70 +111,6 @@ function initBot() {
 					reject(e);
 				}
 			});
-		}
-
-		function getFriends(user_id) {
-			// con.log("getFriends", user_id);
-			return new Promise(function(fulfill, reject) {
-				var param = user_id ? { user_id: user_id } : {};
-				client.get('friends/ids', param, function(error, reply) {
-					if (error) {
-						con.log("get friend ids", error);
-						reject(error);
-					} else {
-						var friends = reply.ids;
-						if (friends.length) {
-							con.log("getFriends of", user_id, friends.length);//, friends.join(" / "));
-							fulfill(friends);
-						} else {
-							con.log("rejected no friends...")
-							reject([]);
-						}
-					}
-				})
-			})
-		}
-
-		function followFriend(user_id) {
-			return new Promise(function(fulfill, reject) {
-				if (user_id) {
-					try {
-						client.post('friendships/create', {id: user_id}, function(error, response) {
-							if (error) {
-								con.log("followFriend error 01", error);
-								reject(error);
-							} else {
-								// con.log("=====================================");
-								// con.log("followFriend fulfill response", response);
-								// con.log("=====================================");
-								con.log("followFriend fulfill name:", response.name, "location:", response.location, "description:", response.description, "url:", response.url);
-								fulfill(response);
-							}
-						});
-					} catch(e) {
-						con.log("followFriend error 02", e);
-						reject(e);
-					}
-				} else {
-					con.log("followFriend no friend to follow!");
-					fulfill(null);
-				}
-			});
-		}
-
-
-		function doIt() {
-			now = new Date()
-			con.log("time", now.getHours() + ":" + now.getMinutes())
-			getFriends().then(randIndex).then(getFriends)
-				.then(randIndex).then(followFriend).then(doItAgain);
-		}
-
-		function doItAgain() {
-			var delayMins = Math.round((3 + Math.random() * 3) * 100) / 100;
-			var delay = delayMins * 60 * 1000;
-			con.log("doItAgain in minutes", delayMins, delay);
-			setTimeout(doIt, delay);
 		}
 
 		// doItAgain();
@@ -200,71 +138,6 @@ function initBot() {
 
 
 
-
-
-	function postMedia(image) {
-		return new Promise(function(fulfill, reject) {
-
-			con.log("postMedia", image);
-			hits ++;
-			if (hits > 2) {
-				con.log("too many hits!");
-				reject(new Error("more than 5 hits!"));
-			}
-
-			con.log("trying client.post!");
-			try {
-
-				// Make post request on media endpoint. Pass file data as media parameter
-				client.post("media/upload", {media: image}, function(error, media, response){
-					if (error) {
-						con.log("postMedia reject 01", error);
-						reject(error);
-					} else {
-						con.log("postMedia fulfill!");
-						fulfill(media);
-					}
-				});
-
-			} catch (e) {
-				con.log("postMedia reject 03", e);
-				reject(e);
-			}
-
-		});
-	}
-
-	function postMediaTweet(media) {
-		return new Promise(function(fulfill, reject) {
-			// If successful, a media object will be returned.
-			con.log("postMediaTweet media success", media);
-
-			// Lets tweet it
-			var status = {
-				status: "@" + sourceTweet.user.screen_name + " your ansi", // Here is an image I made earlier...",
-				media_ids: media.media_id_string,
-				in_reply_to_status_id: sourceTweet.id_str
-			}
-
-			try {
-
-				client.post("statuses/update", status, function(error, tweet, response){
-					if (error) {
-						con.log("postMediaTweet reject 02", error);
-						reject(error);
-					} else {
-						con.log("postMediaTweet fulfill");
-						fulfill(tweet);
-					}
-				});
-
-			} catch (e) {
-				con.log("postMediaTweet reject 01", e);
-				reject(e);
-			}
-
-		})
-	}
 
 	function loadImageURL(url) {
 		return new Promise(function(fulfill, reject) {
@@ -345,6 +218,32 @@ function initBot() {
 
 	function parseTweet(tweet) {
 		var text = tweet.text;
+
+
+		function composeMessage(media) {
+			return new Promise(function(fulfill, reject) {
+				var status = null;
+				try {
+					status = {
+						status: "@" + tweet.user.screen_name + " your ansi", // Here is an image I made earlier...",
+						media_ids: media.media_id_string,
+						in_reply_to_status_id: tweet.id_str
+					}
+				} catch(err) {
+					con.log("composeMessage reject 01");
+					reject(err);
+				}
+				if (status) {
+					con.log("composeMessage fulfill", status);
+					fulfill(status);
+				} else {
+					con.log("composeMessage reject 02");
+					reject();
+				}
+			});
+		}
+
+
 		var url = null;
 		_.each(text.split(" "), function(param,i) {
 			switch(param) {
@@ -361,8 +260,6 @@ function initBot() {
 
 		if (url) {
 
-			sourceTweet = tweet;
-
 			var tweeter = checkURL(url)
 				.then(loadImageURL)
 
@@ -374,7 +271,13 @@ function initBot() {
 
 				//.then(saveFile).then(makeImage)
 
-				.then(postMedia).then(postMediaTweet);
+				.then(socialbot.postMedia)
+				.then(composeMessage)
+				.then(socialbot.postTweet)
+
+				.catch(function(err) {
+					con.log("tweetback error", err);
+				});
 
 		} else {
 			con.log("parseTweet no URL found?", text);
@@ -394,7 +297,7 @@ function initBot() {
 	// parseTweet({text: "@ansibot savoury.jpg 1x"});
 	// parseTweet({text: "@ansibot http://t.co/GiYc8PUmLF 1x"});
 
-	// initStream();
+	initStream();
 	initClient();
 	initSocial();
 
