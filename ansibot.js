@@ -33,6 +33,7 @@ function initBot() {
 	}
 
 	function initStream() {
+		return con.log("AnsiBot is disabled!");
 		initClient();
 		con.log("initialising twitter stream");
 
@@ -298,7 +299,7 @@ function initBot() {
 	// parseTweet({text: "@ansibot http://t.co/GiYc8PUmLF 1x"});
 
 	initStream();
-	initClient();
+	// initClient();
 	// initSocial();
 
 }
