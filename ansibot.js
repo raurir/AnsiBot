@@ -304,6 +304,8 @@ function initBot() {
 
 }
 
+con.log("calling initBot");
+
 initBot();
 
 /*
