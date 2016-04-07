@@ -304,9 +304,11 @@ function initBot() {
 
 }
 
-con.log("calling initBot");
+// con.log("calling initBot");
 
-initBot();
+// initBot();
+
+con.log("doing nothing", new Date());
 
 /*
 // other node methods
