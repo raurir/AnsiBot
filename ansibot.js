@@ -24,10 +24,10 @@ function initBot() {
 		if (client) return;
 		con.log("initialising client");
 		client = socialbot.initClient({
-			consumer_key: process.env.TWITTER_CONSUMER_KEY,
-			consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
-			access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
-			access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
+			consumer_key: process.env.ANSIBOT_CK,
+			consumer_secret: process.env.ANSIBOT_CS,
+			access_token_key: process.env.ANSIBOT_ATK,
+			access_token_secret: process.env.ANSIBOT_ATS,
 		});
 		// con.log("client", client)
 	}
