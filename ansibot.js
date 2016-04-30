@@ -33,7 +33,7 @@ function initBot() {
 	}
 
 	function initStream() {
-		return con.log("AnsiBot is disabled!");
+		// return con.log("AnsiBot is disabled!");
 		initClient();
 		con.log("initialising twitter stream");
 
@@ -304,11 +304,7 @@ function initBot() {
 
 }
 
-// con.log("calling initBot");
-
-// initBot();
-
-con.log("doing nothing", new Date());
+initBot();
 
 /*
 // other node methods
