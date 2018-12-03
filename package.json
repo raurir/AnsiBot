@@ -9,7 +9,7 @@
     "canvas": "~1.2.2",
     "promise": "~8.0.2",
     "q": "~1.2.1",
-    "request": "~2.55.0"
+    "request": "~2.88.0"
   },
   "devDependencies": {},
   "scripts": {
