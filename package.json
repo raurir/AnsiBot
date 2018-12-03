@@ -4,7 +4,7 @@
   "description": "ansi art twitter bot",
   "main": "ansibot.js",
   "dependencies": {
-    "twitter": "~1.2.5",
+    "twitter": "~1.7.1",
     "underscore": "~1.8.3",
     "canvas": "~1.2.2",
     "promise": "~7.0.1",
