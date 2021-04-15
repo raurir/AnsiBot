@@ -5,7 +5,7 @@
   "main": "ansibot.js",
   "dependencies": {
     "twitter": "~1.7.1",
-    "underscore": "~1.9.1",
+    "underscore": "~1.13.1",
     "canvas": "~2.4.1",
     "promise": "~8.0.2",
     "q": "~1.5.1",
