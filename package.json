@@ -6,7 +6,7 @@
   "dependencies": {
     "twitter": "~1.7.1",
     "underscore": "~1.13.1",
-    "canvas": "~2.10.1",
+    "canvas": "~2.11.0",
     "promise": "~8.2.0",
     "q": "~1.5.1",
     "request": "~2.88.0"
